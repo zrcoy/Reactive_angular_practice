@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
-import { map } from "rxjs/operators";
+import { map, shareReplay } from "rxjs/operators";
 
 import { Course } from "../model/course";
 
@@ -15,7 +15,9 @@ export class CoursesService {
     return this.http.get<Course[]>("/api/courses").pipe(
       map((res) => {
         return res["payload"];
-      })
+      }),
+      // use it to only triggering one http request!
+      shareReplay()
     );
   }
 }
