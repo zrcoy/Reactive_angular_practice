@@ -14,6 +14,7 @@ import {
 } from "rxjs/operators";
 
 import { CoursesService } from "../services/courses.service";
+import { LoadingService } from "../loading/loading.service";
 
 @Component({
   selector: "home",
@@ -25,16 +26,21 @@ export class HomeComponent implements OnInit {
 
   advancedCourses$: Observable<Course[]>;
 
-  constructor(private coursesService: CoursesService) {}
+  constructor(
+    private coursesService: CoursesService,
+    private loadingService: LoadingService
+  ) {}
 
   ngOnInit() {
     this.reloadCourses();
   }
 
   reloadCourses() {
-    const courses$ = this.coursesService
-      .getAllCourses()
-      .pipe(map((courses) => courses.sort(sortCoursesBySeqNo)));
+    this.loadingService.onLoadingOn();
+    const courses$ = this.coursesService.getAllCourses().pipe(
+      map((courses) => courses.sort(sortCoursesBySeqNo)),
+      finalize(() => this.loadingService.onLoadingOff())
+    );
 
     //testing purposes for accidentally sending extra http request
     courses$.subscribe((data) => console.log(data));
