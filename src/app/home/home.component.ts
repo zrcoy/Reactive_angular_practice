@@ -1,5 +1,4 @@
 import { Component, OnInit } from "@angular/core";
-import { Course, sortCoursesBySeqNo } from "../model/course";
 import { interval, noop, Observable, of, throwError, timer } from "rxjs";
 import {
   catchError,
@@ -13,8 +12,10 @@ import {
   tap,
 } from "rxjs/operators";
 
+import { Course, sortCoursesBySeqNo } from "../model/course";
 import { CoursesService } from "../services/courses.service";
 import { LoadingService } from "../loading/loading.service";
+import { MessagesService } from "../messages/messages.service";
 
 @Component({
   selector: "home",
@@ -28,7 +29,8 @@ export class HomeComponent implements OnInit {
 
   constructor(
     private coursesService: CoursesService,
-    private loadingService: LoadingService
+    private loadingService: LoadingService,
+    private messagesService: MessagesService
   ) {}
 
   ngOnInit() {
@@ -36,10 +38,16 @@ export class HomeComponent implements OnInit {
   }
 
   reloadCourses() {
-    this.loadingService.onLoadingOn();
-    const courses$ = this.coursesService
-      .getAllCourses()
-      .pipe(map((courses) => courses.sort(sortCoursesBySeqNo)));
+    const courses$ = this.coursesService.getAllCourses().pipe(
+      map((courses) => courses.sort(sortCoursesBySeqNo)),
+      catchError((err) => {
+        const message = "Could not load courses";
+        this.messagesService.showErrors(message);
+        console.log(message, err);
+        //have to return an obs to replace the original one and terminate!
+        return throwError(err);
+      })
+    );
 
     const loadedCourses$ =
       this.loadingService.showLoadingUntilCompleted(courses$);
